@@ -5,9 +5,15 @@ iquant是基于掘金量化系统进行开发的量化交易框架，支持本�
 ##环境说明:
 
 #支持的系统版本：Windows 10
+
 #支持的Python版本： python 3.8 及以上版本
+
 #掘金客户端：v3.16	
+
 #Mysql: v5.0.96
+
 ##安装说明
-#必需要库安装：pip install -r requirements.txt
+
+#必要库安装：pip install -r requirements.txt
+
 
