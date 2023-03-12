@@ -22,19 +22,19 @@
 #### 掘金客户端配置：
 1. 下载安装掘金客户端
 
-    首先从[掘金官网](https://myquant.cn/) 下载掘金客户端v3.16，安装并注册帐号，具体可参考[官网指引](https://myquant.cn/docs/guide/35#32961c39feb7af92)
+    首先从[掘金官网](https://myquant.cn) 下载掘金客户端v3.16，安装并注册帐号，具体可参考[官网指引](https://myquant.cn/docs/guide/35#32961c39feb7af92)
 
 2. 注册帐号并登录客户端创建一个模拟的交易帐号。
 
 3. 新建一个空策略，并记录策略ID
 
 4. 挂接策略到交易帐号
-
-#### iquant量化交易框架参数设置：
+   
+#### starquant量化交易框架参数设置：
 
 1. 修改配置文件
 
-    配置文件路径：\iquant\quant\config.ini
+    配置文件路径：\starquant\quant\config.ini
 
 ```
 [TOKEN]
@@ -50,7 +50,7 @@ backtest_strategy_id= 71878222-a222-222-2222-5811220c517b
 
 ##指定连接数据库信息
 [DATABASE]
-tradedb = mysql+mysqlconnector://root:111111@localhost:3306/iquant
+tradedb = mysql+mysqlconnector://root:111111@localhost:3306/starquant
 
 ##掘金客户端安装路径
 [GOLDMINER]
@@ -59,7 +59,7 @@ path =D:\Goldminer3\Hongshu Goldminer3\goldminer3.exe
 
 2. 数据库创建
     
-  - 创建名称为iquant的空mysql数据库
+  - 创建名称为starquantdb的空mysql数据库
         
   - 运行脚本数据库表：
 ```
@@ -69,18 +69,19 @@ path =D:\Goldminer3\Hongshu Goldminer3\goldminer3.exe
 
 4. 交易标的股票代码设置：
 
-    修改代码文件  \iquant\quant\quantengine.py 可添加交易标的股票代码
+    修改代码文件  starquant\quant\quantengine.py 可添加交易标的股票代码
 
 5. 回测入口
 
     运行
 ```
-python \iquant\quant\startengine_bt.py
+python starquant\quant\startengine_bt.py
 ```
 
 6. 实盘交易入口
 
 运行
 ```
-python \iquant\quant\startengine_live.py
+python starquant\quant\startengine_live.py
 ```
+ 
