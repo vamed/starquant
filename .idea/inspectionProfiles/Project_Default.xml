@@ -1,0 +1,14 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="quant.ui.picktimeframe.getHistoryNKdata" />
+          <option value="quant.strategy.ma_strategy.getHistoryKdata" />
+          <option value="quant.strategy.btdemo2.getHistoryNKdata" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
