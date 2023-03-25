@@ -18,7 +18,7 @@
 
 * 必要库安装：
 ```
-    pip install -r requirements.txt
+    pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 ```
 ### 使用说明
 #### 掘金客户端配置：
