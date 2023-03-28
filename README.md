@@ -1,7 +1,7 @@
 # starquant<星球量化>  
 
     starquant是基于掘金量化系统进行开发的量化交易框架，支持本地部署，支持断点回测，  
-    支持自定义交易策略，选股数据及交易数据本地存贮及本地统计。   
+    支持自定义交易策略，选股数据及交易数据本地存贮及本地自定义统计。   
 [图文使用说明](https://articles.zsxq.com/id_dnsu1lupjbr9.html)   [视频使用说明](https://www.bilibili.com/video/BV1cb411o7oM/?vd_source=477f34fda05c82844e1e16ac83810323)
 
 ### 环境说明:
