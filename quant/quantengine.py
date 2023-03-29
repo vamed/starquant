@@ -109,8 +109,6 @@ class QuantEngine(Context):
 
         # 初始化交易策略
         # 当天交易订单数组
-        context.orders = Order.get_day_orders(self.account.get_account_id(),context.now.strftime("%Y-%m-%d"))
-        context.last_orders = Order.get_last_orders(self.account.get_account_id(), context.holding_symbols)
 
         # 策略引擎初始化，同时初始化所有策略
         # strategy_list=Strategy().get_strategy(self.account.account_id)
@@ -305,22 +303,6 @@ class QuantEngine(Context):
 
     # 获取持仓策略
 
-    # 更新持仓
-    @classmethod
-    def update_position(self,account_id,broker):
-        StockData.update_position(broker)
-
-   # 更新持仓
-   #  @classmethod
-    def update_memory_orders(self,cl_ord_id,status):
-        for i in range(len(self.context.orders)):
-            if self.context.orders[i].cl_ord_id==cl_ord_id:
-                order=self.context.orders[i]
-                del self.context.orders[i]
-                order.status=status
-                self.context.orders.append(order)
-
-        Logger().loginfo(Order.to_df(self.context.orders))
 
 if __name__=='__main__':
 
