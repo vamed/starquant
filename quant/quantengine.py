@@ -187,43 +187,6 @@ class QuantEngine(Context):
             df_pre=GmApi().get_pre_open_bar(symbol=context.all_symbols,date=context.now.strftime("%Y-%m-%d"))
             self.bars=pd.concat([self.bars,df_pre],axis=0,ignore_index=True)
 
-        # 回测模式，新的一天，重置参数
-        if context.mode==MODE_BACKTEST:
-            if context.now.day!=self.day:
-                # 获取上日沪指指数
-                context.sh_index_pre_close = GmApi().get_sh_index_pre_close(context.now)
-                context.sh_index_change =0
-                # 重置变量的值
-                self.suspension_symbols = []
-                self.bars.drop(self.bars.index, inplace=True)
-                self.day=context.now.day
-                Logger().loginfo(context.now.strftime("%Y-%m-%d"))
-                # 记录当前回测日期
-                BacktestRecord().update_backtest_record(account_id= self.context.backtest_account_id,date=context.now.strftime("%Y-%m-%d %H:%M:%S"),status="suspend")
-                context.positions = self.broker.getPositions(display=True)
-                # 持仓代码数组
-                context.holding_symbols.clear()
-                if len(context.positions) > 0:
-                    for i in range(len(context.positions)):
-                        # if self.positions[i].symbol!='SHSE.600616' and self.positions[i].symbol!='SZSE.002230':
-                        if context.positions[i].volume > 0:
-                            context.holding_symbols.append(context.positions[i].symbol)
-                            context.all_symbols.append(context.positions[i].symbol)
-                print(context.holding_symbols)
-                # context.orders = Order.get_day_orders(self.account.get_account_id(), context.now.strftime("%Y-%m-%d"))
-                context.last_orders = Order.get_last_orders(self.account.get_account_id(), context.holding_symbols)
-                self.context.orders=[]
-
-                #     更新交易标的指示及相关参数信息，例如kdj等
-                self.df_stock = StockData.update_indicator(acount_id=self.account.account_id, buy_symbols=context.buy_symbols,positions=context.positions, date=context.now)
-
-                # 去掉停牌股票代码
-                # for index, row in self.df_stock.iterrows():
-                #     if row['suspension'] == True:
-                #         self.suspension_symbols.append(row['symbol'])
-                #回测时，更新订单中的股票代码
-                self.strategyengine.update_order_symbols()
-
     # 自定义订单发送事件回调，同步订阅股票代码
     def on_order_send(self,order):
 
