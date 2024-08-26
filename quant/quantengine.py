@@ -109,6 +109,8 @@ class QuantEngine(Context):
 
         # 初始化交易策略
         # 当天交易订单数组
+        context.orders = Order.get_day_orders(self.account.get_account_id(),context.now.strftime("%Y-%m-%d"))
+        context.last_orders = Order.get_last_orders(self.account.get_account_id(), context.holding_symbols)
 
         # 策略引擎初始化，同时初始化所有策略
         # strategy_list=Strategy().get_strategy(self.account.account_id)
@@ -184,6 +186,109 @@ class QuantEngine(Context):
         if (len(self.bars)==0) & (context.mode== MODE_LIVE):
             df_pre=GmApi().get_pre_open_bar(symbol=context.all_symbols,date=context.now.strftime("%Y-%m-%d"))
             self.bars=pd.concat([self.bars,df_pre],axis=0,ignore_index=True)
+
+        # 回测模式，新的一天，重置参数
+        if context.mode==MODE_BACKTEST:
+            if context.now.day!=self.day:
+                # 获取上日沪指指数
+                context.sh_index_pre_close = GmApi().get_sh_index_pre_close(context.now)
+                context.sh_index_change =0
+                # 重置变量的值
+                self.suspension_symbols = []
+                self.bars.drop(self.bars.index, inplace=True)
+                self.day=context.now.day
+                Logger().loginfo(context.now.strftime("%Y-%m-%d"))
+                # 记录当前回测日期
+                BacktestRecord().update_backtest_record(account_id= self.context.backtest_account_id,date=context.now.strftime("%Y-%m-%d %H:%M:%S"),status="suspend")
+                context.positions = self.broker.getPositions(display=True)
+                # 持仓代码数组
+                context.holding_symbols.clear()
+                if len(context.positions) > 0:
+                    for i in range(len(context.positions)):
+                        # if self.positions[i].symbol!='SHSE.600616' and self.positions[i].symbol!='SZSE.002230':
+                        if context.positions[i].volume > 0:
+                            context.holding_symbols.append(context.positions[i].symbol)
+                            context.all_symbols.append(context.positions[i].symbol)
+                print(context.holding_symbols)
+                # context.orders = Order.get_day_orders(self.account.get_account_id(), context.now.strftime("%Y-%m-%d"))
+                context.last_orders = Order.get_last_orders(self.account.get_account_id(), context.holding_symbols)
+                self.context.orders=[]
+
+                #     更新交易标的指示及相关参数信息，例如kdj等
+                self.df_stock = StockData.update_indicator(acount_id=self.account.account_id, buy_symbols=context.buy_symbols,positions=context.positions, date=context.now)
+
+                # 去掉停牌股票代码
+                # for index, row in self.df_stock.iterrows():
+                #     if row['suspension'] == True:
+                #         self.suspension_symbols.append(row['symbol'])
+                #回测时，更新订单中的股票代码
+                self.strategyengine.update_order_symbols()
+
+        # 如果交易时间超过9：30，计算经过分钟数，补齐bar数据
+        minutes = get_pass_minutes(bars[0].eob)
+        for bar in bars:
+            symbol = bar.symbol
+            cur_bar= self.record_bar(context, bar,symbol,minutes)
+            # print(bar)
+            if len(cur_bar)>1:
+                row=self.df_stock.loc[self.df_stock['symbol']==symbol,:]
+
+                if len(row)==0:
+                    Logger().loginfo("len(row)==0")
+                    continue
+                # row[DfColumns.map.value]=cur_bar.at[cur_bar.index[-1],DfColumns.map.value]
+                stock_indicator= get_obj_from_df(row,StockIndicator)
+                self.df_stock.drop(index=row.index, axis=0, inplace=True)
+                price=bar['close']
+
+                stock_indicator.k,stock_indicator.d,stock_indicator.j=Indicator.instant_kdj(stock_indicator.high,stock_indicator.low,price,stock_indicator.k_pre,stock_indicator.d_pre,cur_bar)
+
+                stock_indicator.stock_type = Ratings.Holding.value
+                if stock_indicator.symbol in context.buy_symbols:
+                    stock_indicator.stock_type=Ratings.BuyIn.value
+
+                pos = Position().get_cache_position(context.positions, symbol)
+                # 更新持仓成本价
+                if pos:
+                    stock_indicator.open_price=pos.open_price
+                m_kdj= Indicator.kdj(cur_bar)
+                stock_indicator.minute_kdj=[m_kdj.at[m_kdj.index[-2],'k'],m_kdj.at[m_kdj.index[-2],'d'],m_kdj.at[m_kdj.index[-2],'j'],m_kdj.at[m_kdj.index[-1],'k'],m_kdj.at[m_kdj.index[-1],'d'],m_kdj.at[m_kdj.index[-1],'j']]
+                self.stock_indicators[symbol]=stock_indicator
+                # 运行策略，
+                Logger().logdebug(stock_indicator.to_json())
+                self.strategyengine.run(context=context, stock_indicator=stock_indicator, bar=bar)
+                # 策略运行过程可能会改变stock_indicator对象的属性值，更新股票指示数据
+                self.df_stock=pdutil.append_from_dic(self.df_stock,stock_indicator.to_json())
+
+    # 将bar数据放入临时存贮
+    def record_bar(self,context,bar,symbol,minutes):
+        df_temp = self.bars.loc[self.bars['symbol'] == symbol, :]
+        if len(df_temp)>0:
+            self.bars.drop(index=df_temp.index, inplace=True)
+        df=df_temp.drop_duplicates(subset='eob',keep=False)
+
+        # if context.mode==MODE_LIVE:
+        # 如果是实盘，补齐bar
+        if len(df_temp) < minutes:
+            df = pd.DataFrame(columns=self.bars.columns)
+            df_temp=GmApi().get_day_bar(symbol=symbol,date=context.now,mode=context.mode)
+            df_temp=df_temp.loc[df_temp['eob']<=bar.eob,:]
+            df=pd.concat([df,df_temp],axis=0,ignore_index=True)
+            # df = df.append(df_temp)
+        # print(bar.eob)
+        if len(df)>0:
+            if bar.eob> df['eob'].max():
+                df = pd.concat([df,pd.DataFrame(bar.data,index=[0])], axis=0, ignore_index=True)
+
+            #         计算即时kdj
+            df = Indicator.kdj(df)
+        #     df=Technical.cal_minuteline(df)
+        # if context.mode==MODE_LIVE:
+        #     df=Technical.cal_minuteline(df)
+
+        self.bars = pd.concat([self.bars, df], axis=0, ignore_index=True)
+
+        return df
 
     # 自定义订单发送事件回调，同步订阅股票代码
     def on_order_send(self,order):
@@ -303,6 +408,22 @@ class QuantEngine(Context):
 
     # 获取持仓策略
 
+    # 更新持仓
+    @classmethod
+    def update_position(self,account_id,broker):
+        StockData.update_position(broker)
+
+   # 更新持仓
+   #  @classmethod
+    def update_memory_orders(self,cl_ord_id,status):
+        for i in range(len(self.context.orders)):
+            if self.context.orders[i].cl_ord_id==cl_ord_id:
+                order=self.context.orders[i]
+                del self.context.orders[i]
+                order.status=status
+                self.context.orders.append(order)
+
+        Logger().loginfo(Order.to_df(self.context.orders))
 
 if __name__=='__main__':
 
