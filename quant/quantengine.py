@@ -147,7 +147,7 @@ class QuantEngine(Context):
 
             # 设置定时任务
             #schedule(schedule_func=, date_rule='1d', time_rule='09:31:00')
-            schedule(schedule_func=self.update_position(self.account.account_id,self.broker), date_rule='1d', time_rule='15:40:00')
+            #schedule(schedule_func=self.update_position(self.account.account_id,self.broker), date_rule='1d', time_rule='15:40:00')
 
         #交易标的指示及相关参数对象 stock_indicator数组
         self.stock_indicators=dict()
