@@ -81,9 +81,13 @@ def run_engine(mode):
         Logger().loginfo("mode运行模式, 回测模式:MODE_BACKTEST:2")
 
     # backtest_start_time = '2022-03-03 08:00:00'
-    backtest_start_time = '2022-05-27 08:00:00'
-    backtest_end_time = '2023-02-27 16:00:00'
-    # backtest_end_time =datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    #backtest_start_time = '2022-05-27 08:00:00'
+    #backtest_end_time = '2023-02-27 16:00:00'
+    # 掘金只提供最近一个月的免费数据，默认回测时间为最近20天
+    current_date = datetime.datetime.now().date()
+    backtest_start_time = (current_date + datetime.timedelta(days=-20)).strftime("%Y-%m-%d %H:%M:%S")
+    backtest_end_time = current_date.strftime("%Y-%m-%d %H:%M:%S")
+    
     if run_mode==MODE_BACKTEST and mode=='2':
         br=BacktestRecord().get_suspend_record()
         if br== None:
